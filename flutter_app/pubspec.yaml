@@ -22,6 +22,11 @@ dependencies:
   geolocator: '^3.0.1'
   vibrate: ^0.0.4
   qrcode_reader: ^0.4.4
+  mqtt_client: ^5.5.3
+  torch: ^0.1.1
+  audioplayers: ^0.11.0
+  intl: ^0.15.8
+
 
   flutter:
     sdk: flutter
