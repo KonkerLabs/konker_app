@@ -13,14 +13,15 @@ class _ConsoleCardState extends State<ConsoleCard> {
 
   void _print(Object object) {
     setState(() {
-      if(_mOut.isNotEmpty)
-        _mOut += '\n';
+      if (_mOut.isNotEmpty) _mOut += '\n';
       Intl.defaultLocale = 'en_US';
       //DateFormat.Hms('us').format(DateTime.now())+ ": " +
-      _mOut +=  DateFormat.Hms().format(DateTime.now())+ ": " + object.toString();
+      _mOut +=
+          DateFormat.Hms().format(DateTime.now()) + ": " + object.toString();
     });
     _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
   }
+
   @override
   Widget build(BuildContext context) {
     Log().addLogFunc('ConsoleCard', _print);
@@ -31,18 +32,27 @@ class _ConsoleCardState extends State<ConsoleCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            SizedBox(child: Text(
-              'Console',
-              style: Theme.of(context).textTheme.headline,
+            SizedBox(
+              child: Text(
+                'Console',
+                style: Theme.of(context).textTheme.headline,
+              ),
+              width: double.infinity,
             ),
-            width: double.infinity,),
-            Container(
-              height: 200,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Text(
-                  _mOut,
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 10.0),
+            SizedBox(
+              width: double.infinity,
+              child: Container(
+                height: 200,
+                color: Colors.grey[700],
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Text(
+                    _mOut,
+                    style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 10.0,
+                        color: Colors.grey[200]),
+                  ),
                 ),
               ),
             )

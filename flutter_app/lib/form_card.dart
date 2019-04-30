@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'custom_icons.dart';
 import 'package:flutter/services.dart';
@@ -6,9 +5,7 @@ import 'konker_connection.dart';
 import 'dart:convert';
 import 'package:qrcode_reader/qrcode_reader.dart';
 import 'cutom_logging.dart';
-
-
-
+import 'package:url_launcher/url_launcher.dart';
 
 class FormCard extends StatefulWidget {
   @override
@@ -23,15 +20,15 @@ class _FormCardState extends State<FormCard> {
   var mqttSubLinkTEController = TextEditingController();
   var mqttHostTEController = TextEditingController();
 
-  void scanQR() {
+  void _scanQR() {
     Future<String> str = new QRCodeReader().scan();
-    str.then(callbackQR);
+    str.then(_callbackQR);
   }
 
-  void callbackQR(String ret) {
+  void _callbackQR(String ret) {
     try {
       var result = JsonDecoder().convert(ret);
-      Log().print(result);
+      Log().print("QRCode read: $result");
       userNameTEController.text = result["user"];
       passwordTEController.text = result["pass"];
       mqttHostTEController.text = result["host-mqtt"];
@@ -43,14 +40,14 @@ class _FormCardState extends State<FormCard> {
       }
       if (!mqttSubLinkTEController.text.startsWith('data/'))
         mqttSubLinkTEController.text = 'data/${userNameTEController.text}/sub';
-      refreshConnectionParamters('');
-      Log().print('QR Code successfully read.');
+      _refreshConnectionParamters('');
+      Log().print('QR Code successfully parsed.');
     } catch (e) {
       Log().outputError("QR Code invalid.");
     }
   }
 
-  void refreshConnectionParamters(String _) {
+  void _refreshConnectionParamters(String _) {
     KonkerCommunication().setConnectionParams(
         userNameTEController.text,
         passwordTEController.text,
@@ -60,6 +57,14 @@ class _FormCardState extends State<FormCard> {
         mqttSubLinkTEController.text);
   }
 
+  void _openKonkerlabs() async{
+    const url = 'https://demo.konkerlabs.net';
+    if (await canLaunch(url)) {
+      await launch(url);
+    } else {
+      Log().outputError('Couldn\'t open $url');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -71,38 +76,31 @@ class _FormCardState extends State<FormCard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text(
-              'Enter your Konker device credential here:',
-              style: Theme
-                  .of(context)
-                  .textTheme
-                  .headline,
+              'Enter your Konker device credentials here:',
+              style: Theme.of(context).textTheme.headline,
             ),
             ListTile(
               title: TextField(
                 controller: userNameTEController,
-                onChanged: refreshConnectionParamters,
+                onChanged: _refreshConnectionParamters,
                 enabled: KonkerCommunication().paused,
                 decoration: InputDecoration(hintText: 'username'),
               ),
               leading: Icon(
                 IconFont.person,
-                color: Theme
-                    .of(context)
-                    .accentColor,
+                color: Theme.of(context).accentColor,
               ),
             ),
             ListTile(
               title: TextField(
                 controller: passwordTEController,
                 enabled: KonkerCommunication().paused,
-                onChanged: refreshConnectionParamters,
+                onChanged: _refreshConnectionParamters,
                 decoration: InputDecoration(hintText: 'password'),
               ),
               leading: Icon(
                 IconFont.vpn_key,
-                color: Theme
-                    .of(context)
-                    .accentColor,
+                color: Theme.of(context).accentColor,
               ),
             ),
             ListTile(
@@ -112,16 +110,16 @@ class _FormCardState extends State<FormCard> {
                       child: TextField(
                         controller: mqttHostTEController,
                         enabled: KonkerCommunication().paused,
-                        onChanged: refreshConnectionParamters,
-                        decoration: InputDecoration(hintText: 'host'),
+                        onChanged: _refreshConnectionParamters,
+                        decoration: InputDecoration(hintText: 'mqtt host'),
                       ),
                       flex: 3),
                   Flexible(
                       child: TextField(
                         controller: mqttPortTEController,
                         enabled: KonkerCommunication().paused,
-                        onChanged: refreshConnectionParamters,
-                        decoration: InputDecoration(hintText: 'port'),
+                        onChanged: _refreshConnectionParamters,
+                        decoration: InputDecoration(hintText: 'secure port'),
                         keyboardType: TextInputType.number,
                       ),
                       flex: 1)
@@ -129,50 +127,57 @@ class _FormCardState extends State<FormCard> {
               ),
               leading: Icon(
                 IconFont.insert_link,
-                color: Theme
-                    .of(context)
-                    .accentColor,
+                color: Theme.of(context).accentColor,
               ),
             ),
             ListTile(
               title: TextField(
                 controller: mqttPubLinkTEController,
                 enabled: KonkerCommunication().paused,
-                onChanged: refreshConnectionParamters,
-                decoration:
-                InputDecoration(hintText: 'server pub url'),
+                onChanged: _refreshConnectionParamters,
+                decoration: InputDecoration(hintText: 'mqtt publication topic'),
               ),
               leading: Icon(
                 IconFont.cloud_upload,
-                color: Theme
-                    .of(context)
-                    .accentColor,
+                color: Theme.of(context).accentColor,
               ),
             ),
             ListTile(
               title: TextField(
                 controller: mqttSubLinkTEController,
                 enabled: KonkerCommunication().paused,
-                onChanged: refreshConnectionParamters,
-                decoration:
-                InputDecoration(hintText: 'server sub url'),
+                onChanged: _refreshConnectionParamters,
+                decoration: InputDecoration(hintText: 'mqtt subsciption topic'),
               ),
               leading: Icon(
                 IconFont.cloud_download,
-                color: Theme
-                    .of(context)
-                    .accentColor,
+                color: Theme.of(context).accentColor,
               ),
             ),
             ButtonTheme.bar(
               child: ButtonBar(
-                alignment: MainAxisAlignment.end,
+                alignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
-                  FlatButton(
-                    onPressed: scanQR,
-                    child: Icon(
+                  RaisedButton(
+                    onPressed: _openKonkerlabs,
+                    color: Theme.of(context).accentColor,
+                    textColor: Colors.white,
+                    child: Row(
+                      children: <Widget>[
+                        Icon(
+                          IconFont.konker_icon_white,
+                        ),
+                        Text('konkerlabs.com')
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _scanQR,
+                    icon: Icon(
                       IconFont.qrcode,
                     ),
+                    color: Theme.of(context).accentColor,
+                    tooltip: 'Scan QR-Code',
                   )
                 ],
               ),

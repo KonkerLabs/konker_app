@@ -27,7 +27,8 @@ class MyApp extends StatelessWidget {
         // is not restarted.
           primaryColor: Color.fromRGBO(0, 75, 155, 1),
           accentColor: Color.fromRGBO(180, 15, 15, 1),
-          primaryColorDark: Color.fromRGBO(0, 60, 120, 1)),
+          primaryColorDark: Color.fromRGBO(0, 60, 120, 1),
+      ),
       home: MyHomePage(title: 'Konker Sensors'),
     );
   }

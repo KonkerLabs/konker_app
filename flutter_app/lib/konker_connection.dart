@@ -8,14 +8,14 @@ import 'cutom_logging.dart';
 class KonkerCommunication {
   Map<String, DateTime> _lastSent = Map();
   int minPause = 3;
-  static KonkerCommunication _instance = null;
+  static KonkerCommunication _instance;
   String mqttPubLink = '';
   String mqttSubLink = '';
   String user = '';
   String pass = '';
   bool paused = true;
   String mqttHost = '';
-  MqttClient mqttClient = null;
+  MqttClient mqttClient;
 
   Map<String, Function(String)> callbacks = Map();
 
@@ -28,6 +28,7 @@ class KonkerCommunication {
 
   KonkerCommunication._internal() {}
 
+  //HTTP
   void sendToKonker(BuildContext context, String channel, Map body) async {
     if (!paused &&
         (!_lastSent.containsKey(channel) ||
@@ -73,13 +74,14 @@ class KonkerCommunication {
     }
   }
 
+  //HTTP
   Future<http.Response> getFromKonker(
-      BuildContext context,
-      String channel,
-      ) async {
+    BuildContext context,
+    String channel,
+  ) async {
     if (paused) return null;
 
-    Log().print('Sending Data to $mqttSubLink/$channel');
+    Log().print('Try sending Data to $mqttSubLink/$channel');
     try {
       String basicAuth = 'Basic ' + base64Encode(utf8.encode('$user:$pass'));
       return http.get('$mqttSubLink/$channel', headers: {
@@ -108,7 +110,7 @@ class KonkerCommunication {
           Log().print('update');
           final MqttPublishMessage recMess = c[0].payload;
           final String pt =
-          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+              MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
           Log().print(pt);
 
           callbacks[c[0].topic](pt);
@@ -141,13 +143,12 @@ class KonkerCommunication {
     pass = password;
     mqttPubLink = mqttPub;
     mqttSubLink = mqttSub;
-    Log().print(mqttPubLink);
     mqttHost = host;
     mqttClient = MqttClient(host, '');
     mqttClient.port = port;
     mqttClient.secure = true;
     var mqttMessage =
-    MqttConnectMessage().withClientIdentifier('test'); // TODO: change
+        MqttConnectMessage().withClientIdentifier('test'); // TODO: change
     mqttMessage.authenticateAs(user, pass);
     mqttMessage.withWillQos(MqttQos.exactlyOnce);
     mqttClient.connectionMessage = mqttMessage;
@@ -178,7 +179,7 @@ class KonkerCommunication {
           subscribe(key, callbacks[key]);
         }
       } catch (e) {
-        Log().outputError('Sending data to konker failed! $e');
+        Log().outputError('Starting connection failed: $e');
       }
     } else {
       try {
@@ -189,9 +190,8 @@ class KonkerCommunication {
         mqttClient.disconnect();
       } catch (e) {
         mqttClient.disconnect();
-        Log().outputError('Sending data to konker failed! $e');
+        Log().outputError('Stopping connection failed: $e');
       }
     }
   }
-
 }

@@ -28,6 +28,7 @@ class IconFont {
 
   static const _kFontFam = 'CustomIconFont';
 
+
   static const IconData person = const IconData(0xe800, fontFamily: _kFontFam);
   static const IconData vpn_key = const IconData(0xe801, fontFamily: _kFontFam);
   static const IconData insert_link = const IconData(0xe802, fontFamily: _kFontFam);
@@ -37,6 +38,8 @@ class IconFont {
   static const IconData konker_icon_white = const IconData(0xe806, fontFamily: _kFontFam);
   static const IconData qrcode = const IconData(0xe807, fontFamily: _kFontFam);
   static const IconData konker_full = const IconData(0xe808, fontFamily: _kFontFam);
+  static const IconData info_outline = const IconData(0xe809, fontFamily: _kFontFam);
   static const IconData cloud_download = const IconData(0xe80a, fontFamily: _kFontFam);
   static const IconData cloud_upload = const IconData(0xe80b, fontFamily: _kFontFam);
+  static const IconData format_align_justify = const IconData(0xe80c, fontFamily: _kFontFam);
 }

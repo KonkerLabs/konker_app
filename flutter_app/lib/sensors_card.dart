@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:sensors/sensors.dart';
 import 'konker_connection.dart';
+import 'custom_icons.dart';
 
 class SensorsCard extends StatefulWidget {
   @override
@@ -16,6 +17,59 @@ class _SensorsCardState extends State<SensorsCard> {
   bool _gyroEnabled = false;
   bool _gpsEnabled = false;
   bool _accEnabled = false;
+
+  void openInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text("Sensors"),
+          content: new SingleChildScrollView(
+            child: new Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                    "Sensors send data when available and after <Play> was pressed, but waits between two events of the same sensor at least ${KonkerCommunication().minPause} seconds."),
+                SizedBox(height: 10),
+                Text(
+                  "GPS",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                    "Publishes location data to the location channel and altitude data to the altitude channel.:"),
+                Text(
+                  "{\n '_ts': 1556636392685,\n '_lat': -23.55,\n '_lon': -46.73 \n}",
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 14.0),
+                ),
+                SizedBox(height: 10),
+                Text(
+                  "Accelerometer/Gyroscope",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                Text(
+                    "Sends Gyroscope and accelerometer data to the corresponding channels:"),
+                Text(
+                  "{\n '_ts': 1556636392685,\n 'x': 0.23,\n 'y': 4.26,\n 'z': 8.98 \n}",
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 14.0),
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            // usually buttons at the bottom of the dialog
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -40,9 +94,9 @@ class _SensorsCardState extends State<SensorsCard> {
       if (_accEnabled) {
         var body = {
           '_ts': DateTime.now().millisecondsSinceEpoch,
-          'val1': event.x,
-          'val2': event.y,
-          'val3': event.z
+          'x': event.x,
+          'y': event.y,
+          'z': event.z
         };
         KonkerCommunication().publish('accelerometer', body);
       }
@@ -52,9 +106,9 @@ class _SensorsCardState extends State<SensorsCard> {
       if (_gyroEnabled) {
         var body = {
           '_ts': DateTime.now().millisecondsSinceEpoch,
-          'val1': event.x,
-          'val2': event.y,
-          'val3': event.z
+          'x': event.x,
+          'y': event.y,
+          'z': event.z
         };
         KonkerCommunication().publish('gyroscope', body);
       }
@@ -62,13 +116,25 @@ class _SensorsCardState extends State<SensorsCard> {
 
     return Card(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+        padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'What data do you want to send?',
-              style: Theme.of(context).textTheme.headline,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                Text(
+                  'What data do you want to send?',
+                  style: Theme.of(context).textTheme.headline,
+                ),
+                IconButton(
+                  icon: Icon(IconFont.info_outline),
+                  tooltip: 'Infos',
+                  onPressed: openInfoDialog,
+                  color: Theme.of(context).primaryColor,
+                ),
+              ],
             ),
             Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
