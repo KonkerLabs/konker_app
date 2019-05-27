@@ -16,8 +16,6 @@ class KonkerCommunication {
   bool paused = true;
   String mqttHost = '';
   MqttClient mqttClient;
-  bool sending = false;
-  bool receiving = false;
   bool _onUpdateAttached = false;
 
   Map<String, Function(String)> callbacks = Map();
@@ -56,14 +54,19 @@ class KonkerCommunication {
     }
   }
 
-  void publish(String channel, Map body) async {
+  bool canPublish(String channel) {
     if (!_lastSent.containsKey(channel))
       _lastSent[channel] =
           DateTime.now().subtract(Duration(seconds: minPause + 1));
-    if (!paused &&
+    return !paused &&
         (!_lastSent.containsKey(channel) ||
             DateTime.now().difference(_lastSent[channel]).inSeconds >=
-                minPause)) {
+                minPause);
+  }
+
+  void publish(String channel, Map body) async {
+   
+    if (canPublish(channel)) {
       _lastSent[channel] = DateTime.now();
       try {
         await mqttConnect();
@@ -76,10 +79,7 @@ class KonkerCommunication {
         mqttClient.publishMessage(
             '$mqttPubLink/$channel', MqttQos.exactlyOnce, builder.payload);
 
-        sending = true;
-        new Timer(const Duration(milliseconds: 250), () {
-          sending = false;
-        });
+
       } catch (ex) {
         Log().print(ex);
         Log().outputError('Sending data to konker failed! $ex');
@@ -177,7 +177,6 @@ class KonkerCommunication {
       Log().print('MQTT disconnected Reconnecting');
       mqttConnect();
     }
-
   }
 
   void onConnected() {
@@ -185,14 +184,13 @@ class KonkerCommunication {
     for (var key in callbacks.keys) {
       subscribe(key, callbacks[key], false);
     }
-    if(!_onUpdateAttached) {
+    if (!_onUpdateAttached) {
       mqttClient.updates.listen(onUpdate);
       _onUpdateAttached = true;
     }
   }
 
   void onUpdate(List<MqttReceivedMessage<MqttMessage>> c) {
-    receiving = true;
     var key = c[0].topic.substring(c[0].topic.lastIndexOf('/') + 1);
     if (callbacks.containsKey(key)) {
       Log().print('Update for topic ${c[0].topic}');
@@ -209,7 +207,7 @@ class KonkerCommunication {
     if (mqttClient == null) {
       throw Exception('No connection info defined.');
     }
-    if (mqttClient.connectionStatus.state == MqttConnectionState.connected||
+    if (mqttClient.connectionStatus.state == MqttConnectionState.connected ||
         mqttClient.connectionStatus.state == MqttConnectionState.connecting) {
       return;
     }

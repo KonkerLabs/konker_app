@@ -13,10 +13,26 @@ class SensorsCard extends StatefulWidget {
 class _SensorsCardState extends State<SensorsCard> {
   var geolocator = Geolocator();
   var locationOptions =
-      LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
+  LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
   bool _gyroEnabled = false;
   bool _gpsEnabled = false;
   bool _accEnabled = false;
+  bool publishing = false;
+  Timer _timer;
+
+  void publish() {
+    setState(() {
+      publishing = true;
+    });
+    if (_timer != null && _timer.isActive) {
+      _timer.cancel();
+    }
+    _timer = new Timer(const Duration(milliseconds: 250), () {
+      setState(() {
+        publishing = false;
+      });
+    });
+  }
 
   void openInfoDialog() {
     showDialog(
@@ -30,7 +46,8 @@ class _SensorsCardState extends State<SensorsCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                    "Sensors send data when available and after <Play> was pressed, but waits between two events of the same sensor at least ${KonkerCommunication().minPause} seconds."),
+                    "Sensors send data when available and after <Play> was pressed, but waits between two events of the same sensor at least ${KonkerCommunication()
+                        .minPause} seconds."),
                 SizedBox(height: 10),
                 Text(
                   "GPS",
@@ -75,48 +92,52 @@ class _SensorsCardState extends State<SensorsCard> {
     StreamSubscription<Position> positionStream = geolocator
         .getPositionStream(locationOptions)
         .listen((Position position) {
-      if (_gpsEnabled) {
+      if (_gpsEnabled && KonkerCommunication().canPublish('location')) {
         var body = {
-          '_ts': DateTime.now().millisecondsSinceEpoch,
+          '_ts': DateTime
+              .now()
+              .millisecondsSinceEpoch,
           '_lat': position.latitude,
           '_lon': position.longitude
         };
-        setState(() {
-          KonkerCommunication().publish('location', body);
-        });
+        KonkerCommunication().publish('location', body);
         body = {
-          '_ts': DateTime.now().millisecondsSinceEpoch,
+          '_ts': DateTime
+              .now()
+              .millisecondsSinceEpoch,
           'val1': position.altitude
         };
-        KonkerCommunication().publish('location', body);
+        KonkerCommunication().publish('altitude', body);
+        publish();
       }
     });
     accelerometerEvents.listen((AccelerometerEvent event) {
-      if (_accEnabled) {
+      if (_accEnabled && KonkerCommunication().canPublish('accelerometer')) {
         var body = {
-          '_ts': DateTime.now().millisecondsSinceEpoch,
+          '_ts': DateTime
+              .now()
+              .millisecondsSinceEpoch,
           'x': event.x,
           'y': event.y,
           'z': event.z
-        };setState(() {
-          setState(() {
-            KonkerCommunication().publish('accelerometer', body);
-          });
-        });
+        };
+        KonkerCommunication().publish('accelerometer', body);
+        publish();
       }
     });
 
     gyroscopeEvents.listen((GyroscopeEvent event) {
-      if (_gyroEnabled) {
+      if (_gyroEnabled && KonkerCommunication().canPublish('gyroscope')) {
         var body = {
-          '_ts': DateTime.now().millisecondsSinceEpoch,
+          '_ts': DateTime
+              .now()
+              .millisecondsSinceEpoch,
           'x': event.x,
           'y': event.y,
           'z': event.z
         };
-        setState(() {
-          KonkerCommunication().publish('gyroscope', body);
-        });
+        KonkerCommunication().publish('gyroscope', body);
+        publish();
       }
     });
 
@@ -136,18 +157,27 @@ class _SensorsCardState extends State<SensorsCard> {
                     Icon(
                       IconFont.cloud_upload,
                       color: KonkerCommunication().paused ||
-                              !(_gpsEnabled || _gyroEnabled || _accEnabled)
-                          ? Theme.of(context).hintColor
-                          : KonkerCommunication().sending
-                              ? Theme.of(context).accentColor
-                              : Theme.of(context).primaryColor,
+                          !(_gpsEnabled || _gyroEnabled || _accEnabled)
+                          ? Theme
+                          .of(context)
+                          .hintColor
+                          : publishing
+                          ? Theme
+                          .of(context)
+                          .accentColor
+                          : Theme
+                          .of(context)
+                          .primaryColor,
                     ),
                     Padding(
                       padding: EdgeInsets.all(5),
                     ),
                     Text(
                       'Sensors',
-                      style: Theme.of(context).textTheme.headline,
+                      style: Theme
+                          .of(context)
+                          .textTheme
+                          .headline,
                     ),
                   ],
                 ),
@@ -155,7 +185,9 @@ class _SensorsCardState extends State<SensorsCard> {
                   icon: Icon(IconFont.info_outline),
                   tooltip: 'Infos',
                   onPressed: openInfoDialog,
-                  color: Theme.of(context).primaryColor,
+                  color: Theme
+                      .of(context)
+                      .primaryColor,
                 ),
               ],
             ),
@@ -168,15 +200,23 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _gpsEnabled,
                         onChanged: (value) =>
-                            {setState(() => _gpsEnabled = value)},
+                        {
+                        setState(() => _gpsEnabled = value)
+                        },
                       ),
                       Text(
                         'GPS',
-                        style: Theme.of(context).textTheme.subhead,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .subhead,
                       ),
                       Text(
                         'location/altitude',
-                        style: Theme.of(context).textTheme.caption,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .caption,
                       )
                     ],
                   ),
@@ -186,15 +226,23 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _accEnabled,
                         onChanged: (value) =>
-                            {setState(() => _accEnabled = value)},
+                        {
+                        setState(() => _accEnabled = value)
+                        },
                       ),
                       Text(
                         'Accelerometer',
-                        style: Theme.of(context).textTheme.subhead,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .subhead,
                       ),
                       Text(
                         'accelerometer',
-                        style: Theme.of(context).textTheme.caption,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .caption,
                       )
                     ],
                   ),
@@ -204,15 +252,23 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _gyroEnabled,
                         onChanged: (value) =>
-                            {setState(() => _gyroEnabled = value)},
+                        {
+                        setState(() => _gyroEnabled = value)
+                        },
                       ),
                       Text(
                         'Gyroscope',
-                        style: Theme.of(context).textTheme.subhead,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .subhead,
                       ),
                       Text(
                         'gyroscope',
-                        style: Theme.of(context).textTheme.caption,
+                        style: Theme
+                            .of(context)
+                            .textTheme
+                            .caption,
                       )
                     ],
                   ),

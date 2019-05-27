@@ -100,6 +100,8 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
           audioPlayer.resume();
           state = 1;
           break;
+        default:
+          Log().outputError('Command ${dataJson["command"]} is invalid');
       }
       setState(() {
         _audioState = state;
@@ -243,7 +245,7 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
                 Row(
                   children: <Widget>[
                     Icon(
-                      IconFont.cloud_upload,
+                      IconFont.cloud_download,
                       color: KonkerCommunication().paused ||
                               !(_vibrationEnabled ||
                                   _flashlightEnabled ||
