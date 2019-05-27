@@ -1,5 +1,5 @@
-name: flutter_app
-description: A new Flutter application.
+name: com.konker.konkersensors
+description: An application to simulate sensors and actutors for the konker platform.
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -11,7 +11,7 @@ description: A new Flutter application.
 # In iOS, build-name is used as CFBundleShortVersionString while build-number used as CFBundleVersion.
 # Read more about iOS versioning at
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
-version: 1.0.0+1
+version: 3.1.0+10
 
 environment:
   sdk: ">=2.2.0 <3.0.0"
@@ -41,7 +41,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: "^0.7.0"
-
 
 flutter_icons:
   ios: true

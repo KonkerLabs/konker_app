@@ -18,8 +18,9 @@ class _ConsoleCardState extends State<ConsoleCard> {
       //DateFormat.Hms('us').format(DateTime.now())+ ": " +
       _mOut +=
           DateFormat.Hms().format(DateTime.now()) + ": " + object.toString();
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
-    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+
   }
 
   @override

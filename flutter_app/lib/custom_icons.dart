@@ -28,7 +28,6 @@ class IconFont {
 
   static const _kFontFam = 'CustomIconFont';
 
-
   static const IconData person = const IconData(0xe800, fontFamily: _kFontFam);
   static const IconData vpn_key = const IconData(0xe801, fontFamily: _kFontFam);
   static const IconData insert_link = const IconData(0xe802, fontFamily: _kFontFam);
@@ -42,4 +41,9 @@ class IconFont {
   static const IconData cloud_download = const IconData(0xe80a, fontFamily: _kFontFam);
   static const IconData cloud_upload = const IconData(0xe80b, fontFamily: _kFontFam);
   static const IconData format_align_justify = const IconData(0xe80c, fontFamily: _kFontFam);
+  static const IconData flash_off = const IconData(0xe80d, fontFamily: _kFontFam);
+  static const IconData flash_on = const IconData(0xe80e, fontFamily: _kFontFam);
+  static const IconData notifications_off = const IconData(0xe80f, fontFamily: _kFontFam);
+  static const IconData notifications_none = const IconData(0xe810, fontFamily: _kFontFam);
+  static const IconData stop = const IconData(0xe811, fontFamily: _kFontFam);
 }

@@ -13,7 +13,7 @@ class SensorsCard extends StatefulWidget {
 class _SensorsCardState extends State<SensorsCard> {
   var geolocator = Geolocator();
   var locationOptions =
-  LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
+      LocationOptions(accuracy: LocationAccuracy.high, distanceFilter: 10);
   bool _gyroEnabled = false;
   bool _gpsEnabled = false;
   bool _accEnabled = false;
@@ -70,7 +70,6 @@ class _SensorsCardState extends State<SensorsCard> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     StreamSubscription<Position> positionStream = geolocator
@@ -82,7 +81,9 @@ class _SensorsCardState extends State<SensorsCard> {
           '_lat': position.latitude,
           '_lon': position.longitude
         };
-        KonkerCommunication().publish('location', body);
+        setState(() {
+          KonkerCommunication().publish('location', body);
+        });
         body = {
           '_ts': DateTime.now().millisecondsSinceEpoch,
           'val1': position.altitude
@@ -97,8 +98,11 @@ class _SensorsCardState extends State<SensorsCard> {
           'x': event.x,
           'y': event.y,
           'z': event.z
-        };
-        KonkerCommunication().publish('accelerometer', body);
+        };setState(() {
+          setState(() {
+            KonkerCommunication().publish('accelerometer', body);
+          });
+        });
       }
     });
 
@@ -110,11 +114,14 @@ class _SensorsCardState extends State<SensorsCard> {
           'y': event.y,
           'z': event.z
         };
-        KonkerCommunication().publish('gyroscope', body);
+        setState(() {
+          KonkerCommunication().publish('gyroscope', body);
+        });
       }
     });
 
     return Card(
+
       child: Padding(
         padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 16.0),
         child: Column(
@@ -124,9 +131,25 @@ class _SensorsCardState extends State<SensorsCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Text(
-                  'What data do you want to send?',
-                  style: Theme.of(context).textTheme.headline,
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      IconFont.cloud_upload,
+                      color: KonkerCommunication().paused ||
+                              !(_gpsEnabled || _gyroEnabled || _accEnabled)
+                          ? Theme.of(context).hintColor
+                          : KonkerCommunication().sending
+                              ? Theme.of(context).accentColor
+                              : Theme.of(context).primaryColor,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(5),
+                    ),
+                    Text(
+                      'Sensors',
+                      style: Theme.of(context).textTheme.headline,
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: Icon(IconFont.info_outline),
@@ -145,7 +168,7 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _gpsEnabled,
                         onChanged: (value) =>
-                        {setState(() => _gpsEnabled = value)},
+                            {setState(() => _gpsEnabled = value)},
                       ),
                       Text(
                         'GPS',
@@ -163,7 +186,7 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _accEnabled,
                         onChanged: (value) =>
-                        {setState(() => _accEnabled = value)},
+                            {setState(() => _accEnabled = value)},
                       ),
                       Text(
                         'Accelerometer',
@@ -181,7 +204,7 @@ class _SensorsCardState extends State<SensorsCard> {
                       Switch(
                         value: _gyroEnabled,
                         onChanged: (value) =>
-                        {setState(() => _gyroEnabled = value)},
+                            {setState(() => _gyroEnabled = value)},
                       ),
                       Text(
                         'Gyroscope',

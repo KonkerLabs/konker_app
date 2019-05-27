@@ -1,4 +1,4 @@
-package com.konkerlabs.flutter_app;
+package com.konker.konkersensors;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:vibrate/vibrate.dart';
@@ -17,6 +19,25 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
   bool _flashlightEnabled = false;
   bool _soundEnabled = false;
   AudioPlayer audioPlayer = new AudioPlayer();
+  Timer _timer;
+  bool receiving = false;
+  bool _flashState = false;
+  bool _vibrationState = false;
+  int _audioState = 0; // 0 = Stopped 1 = Play 2 = resume
+
+  void received() {
+    setState(() {
+      receiving = true;
+    });
+    if (_timer != null && _timer.isActive) {
+      _timer.cancel();
+    }
+    _timer = new Timer(const Duration(milliseconds: 250), () {
+      setState(() {
+        receiving = false;
+      });
+    });
+  }
 
   void toggleVibration() {
     setState(() {
@@ -31,14 +52,19 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
   }
 
   void flash(String data) async {
+    received();
     try {
       Map<String, dynamic> dataJson = jsonDecode(data);
-
+      bool flashState = false;
       if (dataJson['flash']) {
         Torch.turnOn();
+        flashState = true;
       } else {
         Torch.turnOff();
       }
+      setState(() {
+        _flashState = flashState;
+      });
     } on FormatException catch (e) {
       Log().outputError("JSON parsing of $data failed. $e");
     } catch (e) {
@@ -47,6 +73,8 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
   }
 
   void play(String data) async {
+    received();
+    int state = 0;
     try {
       Map<String, dynamic> dataJson = jsonDecode(data);
       switch (dataJson['command']) {
@@ -58,17 +86,24 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
           } else {
             Log().print('Playing MP3 failed');
           }
+          state = 1;
           break;
         case 'pause':
           audioPlayer.pause();
+          state = 2;
           break;
         case 'stop':
           audioPlayer.stop();
+          state = 0;
           break;
         case 'resume':
           audioPlayer.resume();
+          state = 1;
           break;
       }
+      setState(() {
+        _audioState = state;
+      });
     } on FormatException catch (e) {
       Log().outputError("JSON parsing of $data failed. $e");
     } catch (e) {
@@ -103,9 +138,10 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
   }
 
   void vibrate(String data) async {
+    received();
     try {
       bool canVibrate = await Vibrate.canVibrate;
-      if(!canVibrate){
+      if (!canVibrate) {
         Log().outputError("Vibration not supported.");
       }
       Map<String, dynamic> dataJson = jsonDecode(data);
@@ -114,6 +150,13 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
       for (int i = 0; i < dataJson['vibrate'] - 1; i++) {
         pauses.add(Duration(milliseconds: 500));
       }
+      _vibrationState = true;
+      int duration =1000*dataJson['vibrate'];
+      _timer = new Timer(Duration(milliseconds: duration), () {
+        setState(() {
+          _vibrationState = false;
+        });
+      });
       Vibrate.vibrateWithPauses(pauses);
     } on FormatException catch (e) {
       Log().outputError("JSON parsing of $data failed. $e");
@@ -197,9 +240,27 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: <Widget>[
-                Text(
-                  'Here are some actuators to use:',
-                  style: Theme.of(context).textTheme.headline,
+                Row(
+                  children: <Widget>[
+                    Icon(
+                      IconFont.cloud_upload,
+                      color: KonkerCommunication().paused ||
+                              !(_vibrationEnabled ||
+                                  _flashlightEnabled ||
+                                  _soundEnabled)
+                          ? Theme.of(context).hintColor
+                          : receiving
+                              ? Theme.of(context).accentColor
+                              : Theme.of(context).primaryColor,
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(5),
+                    ),
+                    Text(
+                      'Actuators',
+                      style: Theme.of(context).textTheme.headline,
+                    ),
+                  ],
                 ),
                 IconButton(
                   icon: Icon(IconFont.info_outline),
@@ -209,61 +270,101 @@ class _ActuatorsCardState extends State<ActuatorsCard> {
                 ),
               ],
             ),
-            Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: <
+                Widget>[
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  Switch(
+                    value: _vibrationEnabled,
+                    onChanged: (value) => {toggleVibration()},
+                  ),
+                  Row(children: <Widget>[
+                    Icon(
+                      _vibrationState
+                          ? IconFont.notifications_none : IconFont.notifications_off,
+                      size: 20,
+                      color: Colors.black38,
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Vibration',
+                          style: Theme.of(context).textTheme.subhead,
+                        ),
+                        Text(
+                          'vibra',
+                          style: Theme.of(context).textTheme.caption,
+                        )
+                      ],
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                    )
+                  ])
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Switch(
+                    value: _soundEnabled,
+                    onChanged: (value) => {toggleSound()},
+                  ),
+                  Row(children: <Widget>[
+                    Icon(
+                      _audioState == 1
+                          ? IconFont.play_arrow
+                          : _audioState == 2 ? IconFont.pause : IconFont.stop,
+                      size: 20,
+                      color: Colors.black38,
+                    ),
+                    Column(
+                      children: <Widget>[
+                        Text(
+                          'Sound',
+                          style: Theme.of(context).textTheme.subhead,
+                        ),
+                        Text(
+                          'music',
+                          style: Theme.of(context).textTheme.caption,
+                        )
+                      ],
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                    )
+                  ])
+                ],
+              ),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Switch(
+                    value: _flashlightEnabled,
+                    onChanged: (value) => {toggleFlash()},
+                  ),
+                  Row(
                     children: <Widget>[
-                      Switch(
-                        value: _vibrationEnabled,
-                        onChanged: (value) => {toggleVibration()},
+                      Icon(
+                        _flashState ? IconFont.flash_on : IconFont.flash_off,
+                        size: 20,
+                        color: Colors.black38,
                       ),
-                      Text(
-                        'Vibration',
-                        style: Theme.of(context).textTheme.subhead,
-                      ),
-                      Text(
-                        'vibra',
-                        style: Theme.of(context).textTheme.caption,
+                      Column(
+                        children: <Widget>[
+                          Text(
+                            'Flashlight',
+                            style: Theme.of(context).textTheme.subhead,
+                          ),
+                          Text(
+                            'flash',
+                            style: Theme.of(context).textTheme.caption,
+                          )
+                        ],
+                        crossAxisAlignment: CrossAxisAlignment.start,
                       )
                     ],
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Switch(
-                        value: _soundEnabled,
-                        onChanged: (value) => {toggleSound()},
-                      ),
-                      Text(
-                        'Sound',
-                        style: Theme.of(context).textTheme.subhead,
-                      ),
-                      Text(
-                        'music',
-                        style: Theme.of(context).textTheme.caption,
-                      )
-                    ],
-                  ),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: <Widget>[
-                      Switch(
-                        value: _flashlightEnabled,
-                        onChanged: (value) => {toggleFlash()},
-                      ),
-                      Text(
-                        'Flashlight',
-                        style: Theme.of(context).textTheme.subhead,
-                      ),
-                      Text(
-                        'flash',
-                        style: Theme.of(context).textTheme.caption,
-                      )
-                    ],
-                  ),
-                ]),
+                  )
+                ],
+              ),
+            ]),
           ],
         ),
       ),

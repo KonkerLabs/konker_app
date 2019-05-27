@@ -16,6 +16,9 @@ class KonkerCommunication {
   bool paused = true;
   String mqttHost = '';
   MqttClient mqttClient;
+  bool sending = false;
+  bool receiving = false;
+  bool _onUpdateAttached = false;
 
   Map<String, Function(String)> callbacks = Map();
 
@@ -54,19 +57,29 @@ class KonkerCommunication {
   }
 
   void publish(String channel, Map body) async {
+    if (!_lastSent.containsKey(channel))
+      _lastSent[channel] =
+          DateTime.now().subtract(Duration(seconds: minPause + 1));
     if (!paused &&
         (!_lastSent.containsKey(channel) ||
             DateTime.now().difference(_lastSent[channel]).inSeconds >=
                 minPause)) {
       _lastSent[channel] = DateTime.now();
-
-      Log().print('Sending Data to $mqttPubLink/$channel');
       try {
         await mqttConnect();
+        if (mqttClient.connectionStatus.state != MqttConnectionState.connected)
+          return;
+        Log().print('Sending Data to $mqttPubLink/$channel');
+
         final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
         builder.addString(new JsonEncoder().convert(body));
         mqttClient.publishMessage(
             '$mqttPubLink/$channel', MqttQos.exactlyOnce, builder.payload);
+
+        sending = true;
+        new Timer(const Duration(milliseconds: 250), () {
+          sending = false;
+        });
       } catch (ex) {
         Log().print(ex);
         Log().outputError('Sending data to konker failed! $ex');
@@ -98,23 +111,23 @@ class KonkerCommunication {
     return null;
   }
 
-  void subscribe(String topic, Function(String) callback) async {
+  void subscribe(String topic, Function(String) callback,
+      [bool refresh = true]) async {
+    if (refresh) {
+      callbacks[topic] = callback;
+    }
+    if (mqttClient.connectionStatus.state != MqttConnectionState.connected)
+      return;
     if (!topic.startsWith(mqttSubLink)) topic = "$mqttSubLink/$topic";
-    callbacks[topic] = callback;
 
     if (!paused) {
       try {
         await mqttConnect();
-        mqttClient.subscribe(topic, MqttQos.exactlyOnce);
-        mqttClient.updates.listen((List<MqttReceivedMessage<MqttMessage>> c) {
-          Log().print('update');
-          final MqttPublishMessage recMess = c[0].payload;
-          final String pt =
-              MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
-          Log().print(pt);
-
-          callbacks[c[0].topic](pt);
-        });
+        var status = mqttClient.getSubscriptionsStatus(topic);
+        if (status != MqttSubscriptionStatus.active ||
+            status != MqttSubscriptionStatus.pending) {
+          mqttClient.subscribe(topic, MqttQos.exactlyOnce);
+        }
         Log().print('subscribe to $topic');
       } catch (ex) {
         Log().print(ex);
@@ -139,12 +152,14 @@ class KonkerCommunication {
 
   void setConnectionParams(String username, String password, int port,
       String host, String mqttPub, String mqttSub) {
+    paused = true;
     user = username;
     pass = password;
     mqttPubLink = mqttPub;
     mqttSubLink = mqttSub;
     mqttHost = host;
     mqttClient = MqttClient(host, '');
+    _onUpdateAttached = false;
     mqttClient.port = port;
     mqttClient.secure = true;
     var mqttMessage =
@@ -152,18 +167,56 @@ class KonkerCommunication {
     mqttMessage.authenticateAs(user, pass);
     mqttMessage.withWillQos(MqttQos.exactlyOnce);
     mqttClient.connectionMessage = mqttMessage;
+    mqttClient.onDisconnected = this.onDisconnected;
+    mqttClient.onConnected = this.onConnected;
+  }
+
+  void onDisconnected() {
+    _onUpdateAttached = false;
+    if (!paused) {
+      Log().print('MQTT disconnected Reconnecting');
+      mqttConnect();
+    }
+
+  }
+
+  void onConnected() {
+    Log().print('Connected to $mqttHost');
+    for (var key in callbacks.keys) {
+      subscribe(key, callbacks[key], false);
+    }
+    if(!_onUpdateAttached) {
+      mqttClient.updates.listen(onUpdate);
+      _onUpdateAttached = true;
+    }
+  }
+
+  void onUpdate(List<MqttReceivedMessage<MqttMessage>> c) {
+    receiving = true;
+    var key = c[0].topic.substring(c[0].topic.lastIndexOf('/') + 1);
+    if (callbacks.containsKey(key)) {
+      Log().print('Update for topic ${c[0].topic}');
+      final MqttPublishMessage recMess = c[0].payload;
+      final String pt =
+          MqttPublishPayload.bytesToStringAsString(recMess.payload.message);
+      Log().print(pt);
+
+      callbacks[key](pt);
+    }
   }
 
   void mqttConnect() async {
     if (mqttClient == null) {
       throw Exception('No connection info defined.');
     }
-    if (mqttClient.connectionStatus.state == MqttConnectionState.connected) {
-      Log().print('Already connected');
+    if (mqttClient.connectionStatus.state == MqttConnectionState.connected||
+        mqttClient.connectionStatus.state == MqttConnectionState.connecting) {
       return;
     }
     try {
       await mqttClient.connect();
+
+      Log().print('Connecting to $mqttHost');
     } on Exception catch (e) {
       mqttClient.disconnect();
       throw Exception('Connecting failed $e');
@@ -175,9 +228,6 @@ class KonkerCommunication {
     if (paused == false) {
       try {
         await mqttConnect();
-        for (var key in callbacks.keys) {
-          subscribe(key, callbacks[key]);
-        }
       } catch (e) {
         Log().outputError('Starting connection failed: $e');
       }

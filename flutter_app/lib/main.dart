@@ -25,9 +25,9 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-          primaryColor: Color.fromRGBO(0, 75, 155, 1),
-          accentColor: Color.fromRGBO(180, 15, 15, 1),
-          primaryColorDark: Color.fromRGBO(0, 60, 120, 1),
+        primaryColor: Color.fromRGBO(0, 75, 155, 1),
+        accentColor: Color.fromRGBO(180, 15, 15, 1),
+        primaryColorDark: Color.fromRGBO(0, 60, 120, 1),
       ),
       home: MyHomePage(title: 'Konker Sensors'),
     );
@@ -52,17 +52,14 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-
 class _MyHomePageState extends State<MyHomePage> {
   BuildContext _scaffoldContext;
-
 
   void errorOut(Object error) {
     String err = error.toString();
     if (!KonkerCommunication().paused) {
       setState(() {
         KonkerCommunication().paused = true;
-
       });
     }
     Log().print('ERROR: $err');
@@ -85,18 +82,25 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
+
         title: Icon(IconFont.konker_full),
+        elevation: 0.0,
       ),
       body: new Builder(
         builder: (BuildContext context) {
           _scaffoldContext = context;
           return SingleChildScrollView(
-            child: Column(children: <Widget>[
-              FormCard(),
-              SensorsCard(),
-              ActuatorsCard(),
-              ConsoleCard()
-            ]),
+            child: Container(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(0, 10, 0, 0),
+                child: Column(children: <Widget>[
+                  FormCard(),
+                  SensorsCard(),
+                  ActuatorsCard(),
+                  ConsoleCard()
+                ]),
+              ),
+            ),
           );
         },
       ),
@@ -115,6 +119,3 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
-
-
-
