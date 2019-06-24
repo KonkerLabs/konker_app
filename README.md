@@ -19,6 +19,8 @@ version: 3.1.2+13
 The release number has to be in format X.X.X and higher than the last published. The Versioncode after the `+` has to be higher than the last and a full number.
 
 ### Generate the apk
+To build the app bundle run the following command inside the project directory.
 ```
 flutter build appbundle
 ```
+Inside `\build\app\outputs\bundle\release` the app bundle get's created which can be uploaded to the [Google Play Console](https://play.google.com/apps/publish).
