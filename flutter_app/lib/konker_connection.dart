@@ -158,12 +158,12 @@ class KonkerCommunication {
     mqttPubLink = mqttPub;
     mqttSubLink = mqttSub;
     mqttHost = host;
-    mqttClient = MqttClient(host, '');
+    mqttClient = MqttClient(host, user);
     _onUpdateAttached = false;
     mqttClient.port = port;
     mqttClient.secure = true;
     var mqttMessage =
-        MqttConnectMessage().withClientIdentifier('test'); // TODO: change
+        MqttConnectMessage().withClientIdentifier(user); // TODO: change
     mqttMessage.authenticateAs(user, pass);
     mqttMessage.withWillQos(MqttQos.exactlyOnce);
     mqttClient.connectionMessage = mqttMessage;
@@ -180,13 +180,17 @@ class KonkerCommunication {
   }
 
   void onConnected() {
-    Log().print('Connected to $mqttHost');
-    for (var key in callbacks.keys) {
-      subscribe(key, callbacks[key], false);
-    }
-    if (!_onUpdateAttached) {
-      mqttClient.updates.listen(onUpdate);
-      _onUpdateAttached = true;
+    try {
+      Log().print('Connected to $mqttHost');
+      for (var key in callbacks.keys) {
+        subscribe(key, callbacks[key], false);
+      }
+      if (!_onUpdateAttached) {
+        mqttClient.updates.listen(onUpdate);
+        _onUpdateAttached = true;
+      }
+    }on Exception catch (exception){
+      Log().print(exception);
     }
   }
 
@@ -212,9 +216,10 @@ class KonkerCommunication {
       return;
     }
     try {
-      await mqttClient.connect();
 
       Log().print('Connecting to $mqttHost');
+      await mqttClient.connect();
+
     } on Exception catch (e) {
       mqttClient.disconnect();
       throw Exception('Connecting failed $e');
