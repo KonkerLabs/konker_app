@@ -3,3 +3,5 @@ Available in the [Google Play Store](https://play.google.com/store/apps/details?
 
 # Android App to collect data from an OBD2 device and push it to the [konker](http://konkerlabs.com) platform
 [konker_obd2](./konker_obd2)
+
+To try out the konker OBD2 app install [this apk file](./konker_obd2/app-debug.apk).
