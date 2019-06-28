@@ -92,8 +92,6 @@ public class QRCodeReader extends AppCompatActivity {
     }
 
     private void getQRCodeDetails(Bitmap bitmap) {
-        ImageView imageView =findViewById(R.id.imageView);
-        imageView.setImageBitmap(bitmap);
         FirebaseApp.initializeApp(getApplicationContext());
         FirebaseVisionBarcodeDetectorOptions options =
                 new FirebaseVisionBarcodeDetectorOptions.Builder()

@@ -14,6 +14,8 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -97,7 +99,7 @@ public class MainActivity extends AppCompatActivity{
         mqttState = findViewById(R.id.mqtt_state);
         sendingSwitch = findViewById(R.id.sending_switch);
         dataView = findViewById(R.id.dataView);
-        bluetoothManager  = OBDBluetoothManager.getInstance();
+        bluetoothManager  = OBDBluetoothManager.getInstance(this);
         bluetoothManager.setNewValueResultListener(this::onValueUpdate);
         bluetoothManager.setOnNewDTCResultListener(this::onDTCUpdate);
         if (bluetoothManager == null) {
@@ -338,5 +340,23 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
+    // create an action bar button
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.activity_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // handle button activities
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.edit) {
+            Intent intent = new Intent(this, PIDEditor.class);
+            startActivity(intent);
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
 }

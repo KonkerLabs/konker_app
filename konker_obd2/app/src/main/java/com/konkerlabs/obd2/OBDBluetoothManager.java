@@ -2,6 +2,7 @@ package com.konkerlabs.obd2;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.os.Handler;
 import android.util.Log;
 
@@ -9,6 +10,9 @@ import com.harrysoft.androidbluetoothserial.BluetoothManager;
 import com.harrysoft.androidbluetoothserial.BluetoothSerialDevice;
 import com.harrysoft.androidbluetoothserial.SimpleBluetoothDeviceInterface;
 
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,21 +36,16 @@ public class OBDBluetoothManager {
     private BiConsumer<List<String>, OBDDefinition> onNewDTCResult;
     private Handler regularUpdateHandler = new Handler();
     private boolean connected = false;
-    private OBDBluetoothManager(){
-        defs.add(new OBDDefinition("speed","010D", 10));
-        defs.add(new OBDDefinition("rpm","010C", 4.0f, 10));
-        defs.add(new OBDDefinition("throttle-position","0111", 2.55f, 10));
-        defs.add(new OBDDefinition("fuel-level","012F", 2.55f, 10));
-        defs.add(new OBDDefinition("oil-temp","015C", 1f, 10, 40));
-        defs.add(new OBDDefinition("coolant-temp","0167", 1f, 10, 40));
-        defs.add(new OBDDefinition("ambient-temp","0146", 1f, 10, 40));
-        defs.add(new OBDDefinition("intake-air-temp","0105", 1f, 10, 40));
-        defs.add(new OBDDefinition("maf-airflow","0110", 100f, 10));
-        defs.add(new OBDDefinition("dtc","03",10,OBDDefinition.DTC_REQUEST));
+    private OBDBluetoothManager(Context context){
 
-        for(OBDDefinition definition:defs){
-            definitionByPID.put(definition.getPid(), definition);
+        try {
+            defs.addAll(OBDDefinition.load(context));
+        } catch (Exception e) {
+            onError(e);
+            e.printStackTrace();
         }
+        refreshHashMap();
+
 
         bluetoothManager  = BluetoothManager.getInstance();
     }
@@ -86,9 +85,9 @@ public class OBDBluetoothManager {
 
     }
 
-    static OBDBluetoothManager getInstance(){
+    static OBDBluetoothManager getInstance(Context context){
         if( instance == null ){
-            instance = new OBDBluetoothManager();
+            instance = new OBDBluetoothManager(context);
         }
         return  instance;
     }
@@ -234,5 +233,20 @@ public class OBDBluetoothManager {
             bluetoothManager.closeDevice(deviceInterface);
         }
         connected = false;
+    }
+
+    public ArrayList<OBDDefinition> getDefs() {
+        return defs;
+    }
+    public void updateDefs(Context context, ArrayList<OBDDefinition> defs) throws IOException, JSONException {
+        this.defs = defs;
+        OBDDefinition.save(defs, context);
+        refreshHashMap();
+    }
+
+    private void refreshHashMap(){
+        for(OBDDefinition definition:defs){
+            definitionByPID.put(definition.getPid(), definition);
+        }
     }
 }
